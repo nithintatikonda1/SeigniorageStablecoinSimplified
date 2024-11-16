@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract Oracle {
     using SafeMath for uint256;
 
-    uint256 public price;
+    uint256 public price = 1e18;
 
 
     constructor() {
@@ -17,13 +17,7 @@ contract Oracle {
         price = _price;
     }
 
-    function consult(address, uint256 amountIn)
-        external
-        view
-        returns (uint256)
-    {
-        return price.mul(amountIn).div(1e18);
+    function getPrice() public view returns (uint256) {
+        return price;
     }
-
-    event Updated(uint256 price0CumulativeLast, uint256 price1CumulativeLast);
 }

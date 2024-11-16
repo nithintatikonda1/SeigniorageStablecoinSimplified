@@ -11,38 +11,8 @@
 				"type": "constructor"
 			},
 			{
-				"anonymous": false,
-				"inputs": [
-					{
-						"indexed": false,
-						"internalType": "uint256",
-						"name": "price0CumulativeLast",
-						"type": "uint256"
-					},
-					{
-						"indexed": false,
-						"internalType": "uint256",
-						"name": "price1CumulativeLast",
-						"type": "uint256"
-					}
-				],
-				"name": "Updated",
-				"type": "event"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "amountIn",
-						"type": "uint256"
-					}
-				],
-				"name": "consult",
+				"inputs": [],
+				"name": "getPrice",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -116,11 +86,11 @@
 			]
 		},
 		"contracts/oracle.sol": {
-			"keccak256": "0x6c23849c7daa4e0d17a83674752de944ebb75415b428434ebd8d357ed0fecc3c",
+			"keccak256": "0x296b61c53dd9545b88ddeb0fa6b6d414b67f412911c3deaf68d44cfa07975433",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://0275ade53cd26842ee6dd65a1bcdc14ec7dfe46d18cc9c9bd7d09eb30273e476",
-				"dweb:/ipfs/QmPRGH8sAPC7FZNE5CWzJGHkEFCaXrgH48tCJ1iMXfugr4"
+				"bzz-raw://1a3e9ccea89ca5dbd8d675f7ac51d3525eb85670797f9508758b0ff2ce4856a9",
+				"dweb:/ipfs/Qmb4dmP1S7zdRHwYsjSUTdFbg4wrnvbJSQyoKzGtomfFdc"
 			]
 		}
 	},

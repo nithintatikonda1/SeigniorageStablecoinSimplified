@@ -1014,11 +1014,11 @@
 			]
 		},
 		"contracts/cash.sol": {
-			"keccak256": "0xcb84cdd39d7b2e9267fc443541d52688d1fb4c0093b06dcacf108e06b3bb2c4b",
+			"keccak256": "0x34c6a5208a7a314d9ad682b156eaebb309099bd37df2f069a61ba5219cca2fa6",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://5a49bd54c8a6af7bdd612e50d85b2f8336077da7bfcdbec3408d7087bf6446fd",
-				"dweb:/ipfs/QmPLtccprjXycjKYpzNPSjTdCVMourGbzehp83xBQU6koY"
+				"bzz-raw://6de812ed251f49eac080e30c38387e6efc3bc2c97b2218e945fc14a34ff6b259",
+				"dweb:/ipfs/QmVgmLvYDLzFwzTGb23BN5p9BAtrQBQ8Q2aHSjU9gWQzyk"
 			]
 		}
 	},

@@ -14,7 +14,22 @@
 					},
 					{
 						"internalType": "address",
+						"name": "_bond",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
 						"name": "_share",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_oracle",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_boardroom",
 						"type": "address"
 					}
 				],
@@ -64,12 +79,76 @@
 			},
 			{
 				"inputs": [],
+				"name": "allocateSeigniorage",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "boardroom",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "bond",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "targetPrice",
+						"type": "uint256"
+					}
+				],
+				"name": "buyBonds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "cash",
 				"outputs": [
 					{
 						"internalType": "address",
 						"name": "",
 						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "circulatingSupply",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "view",
@@ -90,12 +169,38 @@
 			},
 			{
 				"inputs": [],
+				"name": "getReserve",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "one",
 				"outputs": [
 					{
 						"internalType": "uint256",
 						"name": "",
 						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "oracle",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
 					}
 				],
 				"stateMutability": "view",
@@ -125,6 +230,19 @@
 					}
 				],
 				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "redeemBonds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
 				"type": "function"
 			},
 			{
@@ -196,7 +314,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contracts/boardroom.sol": "Treasury"
+			"contracts/treasury.sol": "Treasury"
 		},
 		"evmVersion": "cancun",
 		"libraries": {},
@@ -378,14 +496,6 @@
 				"dweb:/ipfs/QmVTooKWcLkJ9W68yNX4MgdrbAKiAXwuRN9A7f4NkdcdtQ"
 			]
 		},
-		"contracts/boardroom.sol": {
-			"keccak256": "0xf32d7ea130ef55f564347effbe28a544caa58000366a8bd4c30b40d2a7270dd7",
-			"license": "MIT LICENSE",
-			"urls": [
-				"bzz-raw://bd988cd83f4ad6fd95b19579f89af270c3628a1a609ae8ec08ea50246c01c6be",
-				"dweb:/ipfs/QmaNwWsZqfETKiWjiP4RzLgfbHbB2fkdfswTCGyvgZBKJJ"
-			]
-		},
 		"contracts/bond.sol": {
 			"keccak256": "0x9ce43415ac8b899d095d934710ec3922595b243148396eaec02537799f464cfc",
 			"license": "MIT LICENSE",
@@ -403,11 +513,11 @@
 			]
 		},
 		"contracts/oracle.sol": {
-			"keccak256": "0x6c23849c7daa4e0d17a83674752de944ebb75415b428434ebd8d357ed0fecc3c",
+			"keccak256": "0x296b61c53dd9545b88ddeb0fa6b6d414b67f412911c3deaf68d44cfa07975433",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://0275ade53cd26842ee6dd65a1bcdc14ec7dfe46d18cc9c9bd7d09eb30273e476",
-				"dweb:/ipfs/QmPRGH8sAPC7FZNE5CWzJGHkEFCaXrgH48tCJ1iMXfugr4"
+				"bzz-raw://1a3e9ccea89ca5dbd8d675f7ac51d3525eb85670797f9508758b0ff2ce4856a9",
+				"dweb:/ipfs/Qmb4dmP1S7zdRHwYsjSUTdFbg4wrnvbJSQyoKzGtomfFdc"
 			]
 		},
 		"contracts/share.sol": {
@@ -416,6 +526,14 @@
 			"urls": [
 				"bzz-raw://1eef668ef6ac549740ddd576c5629b03f0d08c63f93291194b17f336fb44474d",
 				"dweb:/ipfs/Qmai1nxF9yNCAAm5cZtbu13qKeDGG34aBo7D93huzbGFXe"
+			]
+		},
+		"contracts/treasury.sol": {
+			"keccak256": "0x489e946c4054fe4267f7dd85908ab74e3d2e51c3bfb66c3394d9bea60a2b46c8",
+			"license": "MIT LICENSE",
+			"urls": [
+				"bzz-raw://1a4f95f82fd3175160957b6ff331e3dc2b552e4b111a759d95bf74ddb6cd98f9",
+				"dweb:/ipfs/QmaQyN8QJXvdAwmZxQ9v8hEPKHaF4n65LrCE6mQeHQgvZh"
 			]
 		}
 	},

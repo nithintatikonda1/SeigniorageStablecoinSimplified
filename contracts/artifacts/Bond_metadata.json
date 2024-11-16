@@ -855,7 +855,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contracts/HighRiskBond.sol": "Bond"
+			"contracts/bond.sol": "Bond"
 		},
 		"evmVersion": "cancun",
 		"libraries": {},
@@ -1013,12 +1013,12 @@
 				"dweb:/ipfs/QmVTooKWcLkJ9W68yNX4MgdrbAKiAXwuRN9A7f4NkdcdtQ"
 			]
 		},
-		"contracts/HighRiskBond.sol": {
-			"keccak256": "0x02865ae43c71742f16e5c605c91a02569daaf429b86d9b76339a130b29bf7d1c",
+		"contracts/bond.sol": {
+			"keccak256": "0x9ce43415ac8b899d095d934710ec3922595b243148396eaec02537799f464cfc",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://a046a0f1b222bf4ea30865f29630ba05a446fe57987e0919dc0ab576e53e4a8b",
-				"dweb:/ipfs/QmbBbL5rs6tdMjnof1Awdyua1rcUox9DMCjS3eKmsLotTy"
+				"bzz-raw://33c0749a9a54897353caad8ac7b5edc2b0df7420f0f95f5e1cbad2990bb96be3",
+				"dweb:/ipfs/QmPGd4nu3uRmvb64MAhmmisR3H7Y5N9YF3qDLJ4vYGV4Yh"
 			]
 		}
 	},

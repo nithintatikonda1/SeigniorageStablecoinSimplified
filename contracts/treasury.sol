@@ -53,7 +53,7 @@ contract Treasury is Context, Ownable {
     }
 
     function _getCashPrice() internal view returns (uint256) {
-        return one;
+        return Oracle(oracle).getPrice();
     }
 
     function buyBonds(uint256 amount, uint256 targetPrice) external {

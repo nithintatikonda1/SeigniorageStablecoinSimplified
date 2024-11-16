@@ -17,7 +17,7 @@ import {Share} from "./share.sol";
 import {Oracle} from "./oracle.sol";
 
 
-contract Boardoom is Context, Ownable {
+contract Boardroom is Context, Ownable {
 
     using SafeERC20 for ERC20;
 
