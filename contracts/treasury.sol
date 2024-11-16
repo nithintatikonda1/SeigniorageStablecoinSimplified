@@ -25,6 +25,7 @@ contract Treasury is Context, Ownable {
     address public bond;
     address public share;
     address public oracle;
+    address public boardroom;
 
     uint256 public decimals = 18;
     uint256 public one = 1 * 10**decimals;
@@ -32,16 +33,15 @@ contract Treasury is Context, Ownable {
     uint256 public priceCeiling = 105 * 10**(decimals - 2); // price required for bond redemptions ($1.05)
 
     uint256 accumulatedSeigniorage; // for bond repayment
-    uint256 shareHolderSeigniorage; // for payment to shareholders
 
 
-    constructor (address _cash, address _bond, address _share, address _oracle) Ownable(msg.sender) {
+    constructor (address _cash, address _bond, address _share, address _oracle, address _boardroom) Ownable(msg.sender) {
         cash = _cash;
         bond = _bond;
         share = _share;
         oracle = _oracle;
+        boardroom = _boardroom;
         accumulatedSeigniorage = Cash(cash).balanceOf(address(this));
-        shareHolderSeigniorage = 0;
     }
 
     function getReserve() public view returns (uint256) {
@@ -120,7 +120,11 @@ contract Treasury is Context, Ownable {
 
         // seigniorage to be allocated for the share holders.
         // TODO: transfer the shareHolderSeigniorage to share holders
-        shareHolderSeigniorage = shareHolderSeigniorage + seigniorage - treasuryReserve;
+        seigniorage -= treasuryReserve;
+        if (seigniorage > 0) {
+            Cash(cash).approve(boardroom, seigniorage);
+            Cash(cash).transfer(boardroom, seigniorage);
+        }
     }
 
 }
