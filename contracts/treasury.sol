@@ -3,6 +3,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -20,6 +21,7 @@ import {Oracle} from "./oracle.sol";
 contract Treasury is Context, Ownable {
 
     using SafeERC20 for ERC20;
+    using SafeMath for uint256;
 
     address public cash;
     address public bond;
@@ -32,7 +34,13 @@ contract Treasury is Context, Ownable {
 
     uint256 public priceCeiling = 105 * 10**(decimals - 2); // price required for bond redemptions ($1.05)
 
-    uint256 accumulatedSeigniorage; // for bond repayment
+    uint256 public earlyBonusPercentage = 30; // Bonus for early bond buyers (30%)
+    uint256 public holdingRewardPercentage = 10; // Long-term holding reward (10%)
+    uint256 public accumulatedSeigniorage; // Reserved for bond repayment
+
+    mapping(address => uint256) public bondPurchaseTimestamp; // Tracks bond purchase times
+    mapping(address => uint256) public bondBalance; // Tracks the total bonds held by the user
+
 
 
     constructor (address _cash, address _bond, address _share, address _oracle, address _boardroom) Ownable(msg.sender) {
@@ -52,8 +60,9 @@ contract Treasury is Context, Ownable {
         return IERC20(cash).totalSupply() - accumulatedSeigniorage;
     }
 
+    // Internal function to fetch the current stablecoin price from the oracle
     function _getCashPrice() internal view returns (uint256) {
-        return Oracle(oracle).getPrice();
+        return Oracle(oracle).price();
     }
 
     function buyBonds(uint256 amount, uint256 targetPrice) external {
@@ -66,8 +75,27 @@ contract Treasury is Context, Ownable {
             "Treasury: cash price is not below $1"
         );
 
-        Cash(cash).burnFrom(_msgSender(), amount);
-        Bond(bond).mint(_msgSender(), amount * one / cashPrice);
+        // Calculate dynamic exchange rate and bonus
+        uint256 dynamicRate = one.mul(one).div(cashPrice); // Inverse proportion to price
+        uint256 bonus = dynamicRate.mul(earlyBonusPercentage).div(100);
+        uint256 totalBonds = amount.mul(dynamicRate.add(bonus)).div(one);
+
+        // Update weighted average timestamp
+        uint256 oldBalance = bondBalance[msg.sender];
+        uint256 newBalance = oldBalance.add(totalBonds);
+
+        // Weighted average: ((oldBalance * oldTimestamp) + (newBonds * currentTime)) / newBalance
+        bondPurchaseTimestamp[msg.sender] = 
+        (bondPurchaseTimestamp[msg.sender].mul(oldBalance)
+        .add(block.timestamp.mul(totalBonds)))
+        .div(newBalance);
+
+        bondBalance[msg.sender] = newBalance; // Update bond balance
+
+
+        Cash(cash).burnFrom(msg.sender, amount); // Burn stablecoins
+        Bond(bond).mint(msg.sender, totalBonds); // Mint bonds
+
     }
 
     function redeemBonds(uint256 amount) external {
@@ -78,17 +106,19 @@ contract Treasury is Context, Ownable {
             cashPrice > priceCeiling, // price > $1.05
             "Treasury: cashPrice not eligible for bond purchase"
         );
+         // Calculate holding rewards based on duration
+        uint256 holdingDuration = block.timestamp.sub(bondPurchaseTimestamp[msg.sender]);
+        uint256 holdingBonus = holdingDuration.mul(holdingRewardPercentage).div(30 days); // Reward grows over time
+        uint256 totalCash = amount.add(amount.mul(holdingBonus).div(100));
+
         require(
-            IERC20(cash).balanceOf(address(this)) >= amount,
-            "Treasury: treasury has no more budget"
+            Cash(cash).balanceOf(address(this)) >= totalCash,
+            "Treasury: Insufficient cash reserves"
         );
 
-        accumulatedSeigniorage = accumulatedSeigniorage = Math.min(accumulatedSeigniorage, amount);
-
-        Bond(bond).burnFrom(_msgSender(), amount);
-        Cash(cash).approve(_msgSender(), amount);
-        Cash(cash).transfer(_msgSender(), amount);
-
+        accumulatedSeigniorage = accumulatedSeigniorage.sub(amount); // Reduce reserve
+        Bond(bond).burnFrom(msg.sender, amount); // Burn bonds
+        Cash(cash).transfer(msg.sender, totalCash); // Transfer stablecoins
     }
 
     function allocateSeigniorage() external {
@@ -125,6 +155,16 @@ contract Treasury is Context, Ownable {
             Cash(cash).approve(boardroom, seigniorage);
             Cash(cash).transfer(boardroom, seigniorage);
         }
+    }
+    // Governance: Adjust key parameters
+    function setParameters(
+        uint256 _priceCeiling,
+        uint256 _earlyBonusPercentage,
+        uint256 _holdingRewardPercentage
+    ) external onlyOwner {
+        priceCeiling = _priceCeiling;
+        earlyBonusPercentage = _earlyBonusPercentage;
+        holdingRewardPercentage = _holdingRewardPercentage;
     }
 
 }

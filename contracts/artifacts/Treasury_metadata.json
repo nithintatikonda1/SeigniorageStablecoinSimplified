@@ -79,6 +79,19 @@
 			},
 			{
 				"inputs": [],
+				"name": "accumulatedSeigniorage",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "allocateSeigniorage",
 				"outputs": [],
 				"stateMutability": "nonpayable",
@@ -105,6 +118,44 @@
 						"internalType": "address",
 						"name": "",
 						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "bondBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "bondPurchaseTimestamp",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "view",
@@ -169,7 +220,33 @@
 			},
 			{
 				"inputs": [],
+				"name": "earlyBonusPercentage",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "getReserve",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "holdingRewardPercentage",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -248,6 +325,29 @@
 			{
 				"inputs": [],
 				"name": "renounceOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_priceCeiling",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_earlyBonusPercentage",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_holdingRewardPercentage",
+						"type": "uint256"
+					}
+				],
+				"name": "setParameters",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -529,11 +629,11 @@
 			]
 		},
 		"contracts/treasury.sol": {
-			"keccak256": "0x489e946c4054fe4267f7dd85908ab74e3d2e51c3bfb66c3394d9bea60a2b46c8",
+			"keccak256": "0x7a838423e71af998b82a0a0a13c2541119cd02667b221f5898bc05fe18a03774",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://1a4f95f82fd3175160957b6ff331e3dc2b552e4b111a759d95bf74ddb6cd98f9",
-				"dweb:/ipfs/QmaQyN8QJXvdAwmZxQ9v8hEPKHaF4n65LrCE6mQeHQgvZh"
+				"bzz-raw://ccf862cb855c0eeafe84bcfaa76c17ff00571366d85133e335347e71062c7622",
+				"dweb:/ipfs/QmXHvCLN5Pjh3TdupmbNFMgdZNnx7iLYfWufuH1HPyBeRe"
 			]
 		}
 	},
