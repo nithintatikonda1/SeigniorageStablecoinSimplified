@@ -17,13 +17,13 @@ import {Share} from "./share.sol";
 import {Oracle} from "./oracle.sol";
 
 
-contract Treasury is Context, Ownable {
+contract Boardoom is Context, Ownable {
 
     using SafeERC20 for ERC20;
 
     address public cash;
     address public share;
-    
+
     uint256 public decimals = 18;
     uint256 public one = 1 * 10**decimals;
 
