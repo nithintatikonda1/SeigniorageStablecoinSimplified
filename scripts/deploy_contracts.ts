@@ -22,7 +22,7 @@ import { deploy } from './ethers-lib'
     const boardroomAddress = boardroom.address
     console.log(`boardroom address: ${boardroomAddress}`)
 
-    const treasury = await deploy('Treasuryy', [cashAddress, bondAddress, shareAddress, oracleAddress, boardroomAddress])
+    const treasury = await deploy('Treasury', [cashAddress, bondAddress, shareAddress, oracleAddress, boardroomAddress])
     const treasuryAddress = treasury.address
     console.log(`treasury address: ${treasuryAddress}`)
 

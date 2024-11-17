@@ -113,7 +113,7 @@ contract Treasury is Context, Ownable {
             "Treasury: Insufficient cash reserves"
         );
 
-        accumulatedSeigniorage = accumulatedSeigniorage.sub(amount); // Reduce reserve
+        accumulatedSeigniorage = accumulatedSeigniorage - amount; // Reduce reserve
         Bond(bond).burnFrom(msg.sender, amount); // Burn bonds
         Cash(cash).transfer(msg.sender, totalCash); // Transfer stablecoins
     }
