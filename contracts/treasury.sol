@@ -3,7 +3,6 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -21,7 +20,6 @@ import {Oracle} from "./oracle.sol";
 contract Treasury is Context, Ownable {
 
     using SafeERC20 for ERC20;
-    using SafeMath for uint256;
 
     address public cash;
     address public bond;
