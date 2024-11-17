@@ -77,20 +77,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"@openzeppelin/contracts/utils/math/SafeMath.sol": {
-			"keccak256": "0x58b21219689909c4f8339af00813760337f7e2e7f169a97fe49e2896dcfb3b9a",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://ef8e012e946dec20e59f2d4446f4b44bb098f3fa8bac103b1b5112fff777447b",
-				"dweb:/ipfs/QmVTooKWcLkJ9W68yNX4MgdrbAKiAXwuRN9A7f4NkdcdtQ"
-			]
-		},
 		"contracts/oracle.sol": {
-			"keccak256": "0x9dd426f8a250e0f3417c06da64d929d2fcbe088884a0a8ac3231a160fd451799",
+			"keccak256": "0x370369dfd993ca8d34400cbaed0d33e40dda19296e1f9cd0a86d67a19f959e32",
 			"license": "MIT LICENSE",
 			"urls": [
-				"bzz-raw://9ea49af36060cd278adbd2b322fda31077c7d0d1ea1288a83031c44bc9e3c324",
-				"dweb:/ipfs/QmZoWdhHdXzp3gicvtmuejv7bScyG3C63Y1wfuxpaeWokA"
+				"bzz-raw://7f5dcc3d34c098cf04b2bb4f5b1312409a7c2d5ed874f835e8cf5fc8e3d8fa2f",
+				"dweb:/ipfs/QmVgBCp9NmmYbiPumPN1NNagGt4FKDpHki6pK9d5PoFcNZ"
 			]
 		}
 	},

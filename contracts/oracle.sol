@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
 contract Oracle {
 
     uint256 public price = 1e18;

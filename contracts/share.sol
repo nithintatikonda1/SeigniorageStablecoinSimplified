@@ -3,7 +3,6 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -13,7 +12,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract Share is ERC20, ERC20Burnable, Ownable, AccessControl {
 
-    using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -32,8 +30,8 @@ contract Share is ERC20, ERC20Burnable, Ownable, AccessControl {
 
     function mint(address receiver, uint256 amount) external {
         require(hasRole(MINTER_ROLE, msg.sender), "Not allowed to mint shares.");
-        supplyAmount = supplyAmount.add(amount);
-        balances[receiver] = balances[receiver].add(amount);
+        supplyAmount = supplyAmount + amount;
+        balances[receiver] = balances[receiver] + amount;
         _mint(receiver, amount);
     }
 
