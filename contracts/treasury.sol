@@ -73,20 +73,18 @@ contract Treasury is Context, Ownable {
             "Treasury: cash price is not below $1"
         );
 
-        // Calculate dynamic exchange rate and bonus
-        uint256 dynamicRate = one.mul(one).div(cashPrice); // Inverse proportion to price
-        uint256 bonus = dynamicRate.mul(earlyBonusPercentage).div(100);
-        uint256 totalBonds = amount.mul(dynamicRate.add(bonus)).div(one);
-
+         // Calculate dynamic exchange rate and bonus
+        uint256 dynamicRate = one * (one) / (cashPrice); // Inverse proportion to
+        uint256 bonus = dynamicRate * (earlyBonusPercentage) / (100);
+        uint256 totalBonds = amount * (dynamicRate + (bonus)) / (one);
+        
         // Update weighted average timestamp
         uint256 oldBalance = bondBalance[msg.sender];
-        uint256 newBalance = oldBalance.add(totalBonds);
-
-        // Weighted average: ((oldBalance * oldTimestamp) + (newBonds * currentTime)) / newBalance
-        bondPurchaseTimestamp[msg.sender] = 
-        (bondPurchaseTimestamp[msg.sender].mul(oldBalance)
-        .add(block.timestamp.mul(totalBonds)))
-        .div(newBalance);
+        uint256 newBalance = oldBalance + (totalBonds);
+        
+        // Weighted average: ((oldBalance * oldTimestamp) + (newBonds * currentTime))
+        bondPurchaseTimestamp[msg.sender] =
+        (bondPurchaseTimestamp[msg.sender] * (oldBalance) + (block.timestamp * (totalBonds))) / (newBalance);
 
         bondBalance[msg.sender] = newBalance; // Update bond balance
 
@@ -104,11 +102,12 @@ contract Treasury is Context, Ownable {
             cashPrice > priceCeiling, // price > $1.05
             "Treasury: cashPrice not eligible for bond purchase"
         );
-         // Calculate holding rewards based on duration
-        uint256 holdingDuration = block.timestamp.sub(bondPurchaseTimestamp[msg.sender]);
-        uint256 holdingBonus = holdingDuration.mul(holdingRewardPercentage).div(30 days); // Reward grows over time
-        uint256 totalCash = amount.add(amount.mul(holdingBonus).div(100));
-
+        // Calculate holding rewards based on duration
+         uint256 holdingDuration = block.timestamp - (bondPurchaseTimestamp[msg.sender]);
+        uint256 holdingBonus = holdingDuration * (holdingRewardPercentage)/ (30 days);  
+        // Reward grows over time
+        uint256 totalCash = amount + (amount * (holdingBonus) / (100));
+            
         require(
             Cash(cash).balanceOf(address(this)) >= totalCash,
             "Treasury: Insufficient cash reserves"
