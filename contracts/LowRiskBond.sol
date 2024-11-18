@@ -10,34 +10,52 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
-contract HighRiskBond is ERC20, ERC20Burnable, Ownable, AccessControl {
+contract LowRiskBond is ERC20, Ownable {
+    using SafeERC20 for IERC20;
 
-    using SafeERC20 for ERC20;
+    IERC20 public stableToken;
+    uint256 public bondConversionRate;
+    uint256 public startTime;
+    uint256 public endTime;
+    uint256 public totalBondsIssued;
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    
-    mapping (address => uint256) private balances;
+    event BondsMinted(address indexed user, uint256 amount);
+    event BondsRedeemed(address indexed user, uint256 amount);
 
-    uint256 private supplyAmount;
-
-    constructor () ERC20("LowRiskBond", "LRB") Ownable(msg.sender) {
-        _grantRole(MINTER_ROLE, msg.sender);
-    }
-
-    function grantMinterRole(address minter) public onlyOwner {
-        _grantRole(MINTER_ROLE, minter);
-    }
-
-    function mint(address receiver, uint256 amount) external {
-        require(hasRole(MINTER_ROLE, msg.sender), "Not allowed to mint bonds.");
-        supplyAmount = supplyAmount + amount;
-        balances[receiver] = balances[receiver] + amount;
-        _mint(receiver, amount);
-    }
-
-    function burnFrom(address account, uint256 amount) public override
+    constructor(IERC20 _stableToken, uint256 _startTime, uint256 _endTime, uint256 _initialRate)
+        ERC20("LowRiskBond", "LRB")
     {
-        require(hasRole(MINTER_ROLE, msg.sender), "Not allowed burn bonds");
-        super.burnFrom(account, amount);
+        require(_endTime > _startTime, "Invalid time range");
+        stableToken = _stableToken;
+        startTime = _startTime;
+        endTime = _endTime;
+        bondConversionRate = _initialRate;
+    }
+
+    function mintBonds(uint256 stableAmount) external {
+        require(block.timestamp >= startTime && block.timestamp <= endTime, "Bond issuance not active");
+        uint256 adjustedRate = getCurrentRate();
+        uint256 bondAmount = stableAmount * adjustedRate / 1e18;
+        stableToken.safeTransferFrom(msg.sender, address(this), stableAmount);
+        _mint(msg.sender, bondAmount);
+        totalBondsIssued += bondAmount;
+        emit BondsMinted(msg.sender, bondAmount);
+    }
+
+    function redeemBonds(uint256 bondAmount) external {
+        require(bondAmount > 0, "Invalid bond amount");
+        _burn(msg.sender, bondAmount);
+        uint256 stableAmount = bondAmount * 1e18 / bondConversionRate;
+        stableToken.safeTransfer(msg.sender, stableAmount);
+        emit BondsRedeemed(msg.sender, bondAmount);
+    }
+
+    function getCurrentRate() public view returns (uint256) {
+        if (block.timestamp < startTime) {
+            return bondConversionRate;
+        }
+        uint256 elapsed = block.timestamp - startTime;
+        uint256 duration = endTime - startTime;
+        return bondConversionRate + (elapsed * 1e18 / duration); // Simplified increasing rate logic
     }
 }

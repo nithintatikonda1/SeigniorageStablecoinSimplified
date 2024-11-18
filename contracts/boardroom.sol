@@ -17,25 +17,62 @@ import {Share} from "./share.sol";
 import {Oracle} from "./oracle.sol";
 
 
-contract Boardroom is Context, Ownable {
+contract Boardroom is Ownable {
+    using SafeERC20 for IERC20;
 
-    using SafeERC20 for ERC20;
+    IERC20 public shareToken;
+    IERC20 public stableToken;
+    uint256 public totalRewardsDistributed;
 
-    address public cash;
-    address public share;
+    mapping(address => uint256) public userShares;
+    mapping(address => uint256) public userRewardDebt;
+    uint256 public accRewardPerShare;
+    uint256 public lastRewardTime;
+    uint256 public rewardRate;
 
-    uint256 public decimals = 18;
-    uint256 public one = 1 * 10**decimals;
+    event RewardDistributed(address indexed user, uint256 amount);
+    event Deposit(address indexed user, uint256 amount);
+    event Withdraw(address indexed user, uint256 amount);
 
-    uint256 public priceCeiling = 105 * 10**(decimals - 2); // price required for bond redemptions ($1.05)
-
-    uint256 accumulatedSeigniorage; // for bond repayment
-    uint256 shareHolderSeigniorage; // for payment to shareholders
-
-
-    constructor (address _cash, address _share) Ownable(msg.sender) {
-        cash = _cash;
-        share = _share;
+    constructor(IERC20 _shareToken, IERC20 _stableToken, uint256 _rewardRate) {
+        shareToken = _shareToken;
+        stableToken = _stableToken;
+        rewardRate = _rewardRate;
+        lastRewardTime = block.timestamp;
     }
 
+    modifier updateRewards() {
+        if (block.timestamp > lastRewardTime) {
+            uint256 timeElapsed = block.timestamp - lastRewardTime;
+            uint256 rewards = timeElapsed * rewardRate;
+            accRewardPerShare += rewards / shareToken.totalSupply();
+            lastRewardTime = block.timestamp;
+        }
+        _;
+    }
+
+    function deposit(uint256 amount) external updateRewards {
+        require(amount > 0, "Amount must be greater than zero");
+        shareToken.safeTransferFrom(msg.sender, address(this), amount);
+        userShares[msg.sender] += amount;
+        userRewardDebt[msg.sender] = (userShares[msg.sender] * accRewardPerShare) / 1e18;
+        emit Deposit(msg.sender, amount);
+    }
+
+    function withdraw(uint256 amount) external updateRewards {
+        require(amount > 0 && userShares[msg.sender] >= amount, "Invalid withdraw amount");
+        shareToken.safeTransfer(msg.sender, amount);
+        userShares[msg.sender] -= amount;
+        userRewardDebt[msg.sender] = (userShares[msg.sender] * accRewardPerShare) / 1e18;
+        emit Withdraw(msg.sender, amount);
+    }
+
+    function claimRewards() external updateRewards {
+        uint256 pendingReward = ((userShares[msg.sender] * accRewardPerShare) / 1e18) - userRewardDebt[msg.sender];
+        require(pendingReward > 0, "No rewards to claim");
+        stableToken.safeTransfer(msg.sender, pendingReward);
+        userRewardDebt[msg.sender] = (userShares[msg.sender] * accRewardPerShare) / 1e18;
+        totalRewardsDistributed += pendingReward;
+        emit RewardDistributed(msg.sender, pendingReward);
+    }
 }
