@@ -130,6 +130,41 @@ const {
             expect(bondBalance).to.be.greaterThan(bondAmount);
         });
     });
+    describe("Rapid Price Recovery Simulation", function () {
+        it("Simulates rapid price recovery and bond redemption", async function () {
+            const { treasury, bond, cash, oracle } = await loadFixture(deployContracts);
+            const [_, otherAccount] = await ethers.getSigners();
+
+            const initialPrice = ethers.parseUnits("75", 16); // $0.75
+            await oracle.setPrice(initialPrice);
+
+            const bondAmount = ethers.parseUnits("200", 18);
+
+            // Allocate seigniorage to the Treasury
+            await treasury.allocateSeigniorage();
+
+            // Check Treasury balance
+            const treasuryBalance = await cash.balanceOf(await treasury.getAddress());
+            console.log("Treasury Cash Balance After Seigniorage:", treasuryBalance.toString());
+
+            await treasury.connect(otherAccount).buyBonds(bondAmount, initialPrice);
+
+            // Check bond balance
+            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
+            expect(bondBalance).to.be.greaterThan(bondAmount);
+
+            // Increase price to $1.10
+            await oracle.setPrice(ethers.parseUnits("1.10", 18));
+
+            // Redeem bonds
+            await bond.connect(otherAccount).approve(await treasury.getAddress(), bondBalance);
+            await treasury.connect(otherAccount).redeemBonds(bondBalance);
+
+            const cashBalance = await cash.balanceOf(await otherAccount.getAddress());
+            expect(cashBalance).to.be.greaterThan(bondAmount);
+        });
+
+    }); 
 
   });
   
