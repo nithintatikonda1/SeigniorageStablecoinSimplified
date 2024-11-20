@@ -108,5 +108,28 @@ const {
             
           });
       });
+    describe("Prolonged Price Depression", function () {
+        it("Simulates prolonged price depression and late bond purchase", async function () {
+            const { treasury, bond, oracle, cash } = await loadFixture(deployContracts);
+            const [_, otherAccount] = await ethers.getSigners();
+
+            const cashPrice = ethers.parseUnits("80", 16); // Set price to $0.80
+            await oracle.setPrice(cashPrice);
+
+            const bondAmount = ethers.parseUnits("100", 18);
+            const targetPrice = cashPrice;
+
+            // Simulate 30 days passing
+            await time.increase(30 * 24 * 60 * 60);
+
+            // User buys bonds after delay
+            await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+            // Check bond balance
+            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
+            expect(bondBalance).to.be.greaterThan(bondAmount);
+        });
+    });
+
   });
   
