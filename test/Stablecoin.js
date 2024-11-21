@@ -127,5 +127,85 @@ describe("Stablecoin", function () {
           const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
           expect(bondBalance).to.be.gt(bondAmount);
         });
+<<<<<<< HEAD
     });
 });
+=======
+
+        it("Bonds received should be greater than the amount of cash sent", async function () {
+            const { cash, bond, share, oracle, boardroom, treasury, userAddresses } = await loadFixture(deployContracts);
+            const [owner, otherAccount] = await ethers.getSigners();
+
+            const cashPrice = ethers.parseUnits("95", 16);
+            await oracle.setPrice(cashPrice);
+  
+            const bondAmount = ethers.parseUnits("1", 18);
+            const targetPrice = cashPrice;
+            await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
+            expect(bondBalance).to.greaterThan(bondAmount);
+            
+          });
+      });
+    describe("Prolonged Price Depression", function () {
+        it("Simulates prolonged price depression and late bond purchase", async function () {
+            const { treasury, bond, oracle, cash } = await loadFixture(deployContracts);
+            const [_, otherAccount] = await ethers.getSigners();
+
+            const cashPrice = ethers.parseUnits("80", 16); // Set price to $0.80
+            await oracle.setPrice(cashPrice);
+
+            const bondAmount = ethers.parseUnits("100", 18);
+            const targetPrice = cashPrice;
+
+            // Simulate 30 days passing
+            await time.increase(30 * 24 * 60 * 60);
+
+            // User buys bonds after delay
+            await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+            // Check bond balance
+            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
+            expect(bondBalance).to.be.greaterThan(bondAmount);
+        });
+    });
+    describe("Rapid Price Recovery Simulation", function () {
+        it("Simulates rapid price recovery and bond redemption", async function () {
+            const { treasury, bond, cash, oracle } = await loadFixture(deployContracts);
+            const [_, otherAccount] = await ethers.getSigners();
+
+            const initialPrice = ethers.parseUnits("75", 16); // $0.75
+            await oracle.setPrice(initialPrice);
+
+            const bondAmount = ethers.parseUnits("200", 18);
+
+            // Allocate seigniorage to the Treasury
+            await treasury.allocateSeigniorage();
+
+            // Check Treasury balance
+            const treasuryBalance = await cash.balanceOf(await treasury.getAddress());
+            console.log("Treasury Cash Balance After Seigniorage:", treasuryBalance.toString());
+
+            await treasury.connect(otherAccount).buyBonds(bondAmount, initialPrice);
+
+            // Check bond balance
+            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
+            expect(bondBalance).to.be.greaterThan(bondAmount);
+
+            // Increase price to $1.10
+            await oracle.setPrice(ethers.parseUnits("1.10", 18));
+
+            // Redeem bonds
+            await bond.connect(otherAccount).approve(await treasury.getAddress(), bondBalance);
+            await treasury.connect(otherAccount).redeemBonds(bondBalance);
+
+            const cashBalance = await cash.balanceOf(await otherAccount.getAddress());
+            expect(cashBalance).to.be.greaterThan(bondAmount);
+        });
+
+    }); 
+
+  });
+  
+>>>>>>> b35c68e21a3bb90431a52704fdce1d1abcf70538
