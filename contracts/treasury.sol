@@ -105,8 +105,6 @@ contract Treasury is Context, Ownable {
 
         bondBalance[msg.sender] = newBalance; // Update bond balance
 
-        console.log("Amount to burn:", amount);
-        console.log("Amount cash:", Cash(cash).balanceOf(msg.sender));
         Cash(cash).burnFromAddress(msg.sender, amount); // Burn stablecoins
         Bond(bond).mint(msg.sender, totalBonds); // Mint bonds
     }
@@ -231,11 +229,12 @@ contract Treasury is Context, Ownable {
 
         uint256 totalLowRiskBonds = IERC20(lowRiskBond).totalSupply();
         uint256 totalHighRiskBonds = IERC20(highRiskBond).totalSupply();
+        uint256 totalBonds = IERC20(bond).totalSupply();
 
         uint256 maxHighRiskRedemptionMultiplier = 120; // 120%
         uint256 maxHighRiskBondsRedemption = (totalHighRiskBonds * maxHighRiskRedemptionMultiplier) / 100;
 
-        uint256 totalBondsToRepay = totalLowRiskBonds + maxHighRiskBondsRedemption;
+        uint256 totalBondsToRepay = totalLowRiskBonds + maxHighRiskBondsRedemption + totalBonds;
 
         uint256 treasuryReserve = Math.min(
             seigniorage,
@@ -243,7 +242,7 @@ contract Treasury is Context, Ownable {
         );
 
         if (treasuryReserve > 0) {
-            uint256 maxTreasuryAllocation = (seigniorage * 80) / 100;
+            uint256 maxTreasuryAllocation = (seigniorage * 98) / 100;
             if (treasuryReserve > maxTreasuryAllocation) {
                 treasuryReserve = maxTreasuryAllocation;
             }

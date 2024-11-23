@@ -75,7 +75,7 @@ describe("Stablecoin", function () {
       await highRiskBond.grantMinterRole(treasuryAddress);
 
       // Mint 100 tokens to each user
-      const mintAmount = ethers.parseUnits("100", 18);
+      const mintAmount = ethers.parseUnits("200", 18);
       for (const userAddress of userAddresses) {
           const tx = await cash.mint(userAddress, mintAmount);
           await tx.wait();
@@ -91,12 +91,76 @@ describe("Stablecoin", function () {
       // Check that each user has 100 tokens
       for (const userAddress of userAddresses) {
           const balance = await cash.balanceOf(userAddress);
-          expect(balance).to.equal(ethers.parseUnits("100", 18));
+          expect(balance).to.equal(ethers.parseUnits("200", 18));
       }
     });
   });
 
-  describe("Bond Purchase", function () {
+  describe("Low Tier Bond Purchase", function () {
+      it("Low tier bonds should not be purchasable when price is $1", async function () {
+        const { treasury } = await loadFixture(deployContracts);
+        const [owner, otherAccount] = await ethers.getSigners();
+
+        const bondAmount = ethers.parseUnits("100", 18);
+        const targetPrice = ethers.parseUnits("1", 18);
+
+        await expect(
+          treasury.connect(otherAccount).lowTierBuyBonds(bondAmount, targetPrice)
+        ).to.be.revertedWith("Treasury: cash price is not below $1");
+      });
+
+      it("Low tier bonds received should be greater than the amount of cash sent", async function () {
+          const { cash, bond, oracle, treasury, userAddresses, lowRiskBond, highRiskBond} = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("1", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+
+          await treasury.connect(otherAccount).lowTierBuyBonds(bondAmount, targetPrice);
+
+          const bondBalance = await lowRiskBond.balanceOf(await otherAccount.getAddress());
+          expect(bondBalance).to.be.gt(bondAmount);
+        });
+    });
+    describe("High Tier Bond Purchase", function () {
+      it("High tier bonds should not be purchasable when price is $1", async function () {
+        const { treasury } = await loadFixture(deployContracts);
+        const [owner, otherAccount] = await ethers.getSigners();
+
+        const bondAmount = ethers.parseUnits("100", 18);
+        const targetPrice = ethers.parseUnits("1", 18);
+
+        await expect(
+          treasury.connect(otherAccount).highTierBuyBonds(bondAmount, targetPrice)
+        ).to.be.revertedWith("Treasury: cash price is not below $1");
+      });
+
+      it("High tier bonds received should be greater than the amount of cash sent", async function () {
+          const { cash, bond, oracle, treasury, userAddresses, lowRiskBond, highRiskBond} = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("1", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+
+          await treasury.connect(otherAccount).highTierBuyBonds(bondAmount, targetPrice);
+
+          const bondBalance = await highRiskBond.balanceOf(await otherAccount.getAddress());
+          expect(bondBalance).to.be.gt(bondAmount);
+        });
+    });
+    describe("Bond Purchase", function () {
       it("Bonds should not be purchasable when price is $1", async function () {
         const { treasury } = await loadFixture(deployContracts);
         const [owner, otherAccount] = await ethers.getSigners();
@@ -127,27 +191,7 @@ describe("Stablecoin", function () {
           const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
           expect(bondBalance).to.be.gt(bondAmount);
         });
-<<<<<<< HEAD
     });
-});
-=======
-
-        it("Bonds received should be greater than the amount of cash sent", async function () {
-            const { cash, bond, share, oracle, boardroom, treasury, userAddresses } = await loadFixture(deployContracts);
-            const [owner, otherAccount] = await ethers.getSigners();
-
-            const cashPrice = ethers.parseUnits("95", 16);
-            await oracle.setPrice(cashPrice);
-  
-            const bondAmount = ethers.parseUnits("1", 18);
-            const targetPrice = cashPrice;
-            await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
-
-            const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
-            expect(bondBalance).to.greaterThan(bondAmount);
-            
-          });
-      });
     describe("Prolonged Price Depression", function () {
         it("Simulates prolonged price depression and late bond purchase", async function () {
             const { treasury, bond, oracle, cash } = await loadFixture(deployContracts);
@@ -185,7 +229,6 @@ describe("Stablecoin", function () {
 
             // Check Treasury balance
             const treasuryBalance = await cash.balanceOf(await treasury.getAddress());
-            console.log("Treasury Cash Balance After Seigniorage:", treasuryBalance.toString());
 
             await treasury.connect(otherAccount).buyBonds(bondAmount, initialPrice);
 
@@ -195,6 +238,7 @@ describe("Stablecoin", function () {
 
             // Increase price to $1.10
             await oracle.setPrice(ethers.parseUnits("1.10", 18));
+            treasury.allocateSeigniorage();
 
             // Redeem bonds
             await bond.connect(otherAccount).approve(await treasury.getAddress(), bondBalance);
@@ -208,4 +252,3 @@ describe("Stablecoin", function () {
 
   });
   
->>>>>>> b35c68e21a3bb90431a52704fdce1d1abcf70538
