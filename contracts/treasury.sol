@@ -45,7 +45,11 @@ contract Treasury is Context, Ownable {
     uint256 public accumulatedSeigniorage; // Reserved for bond repayment
 
     mapping(address => uint256) public bondPurchaseTimestamp; // Tracks bond purchase times
-    mapping(address => uint256) public bondBalance; // Tracks the total bonds held by the user
+
+    modifier onlyCash() {
+        require(msg.sender == cash, "Only the Cash contract can call this function.");
+        _;
+    }
 
     constructor(
         address _cash,
@@ -80,6 +84,14 @@ contract Treasury is Context, Ownable {
     }
 
     function buyBonds(uint256 amount, uint256 targetPrice) external {
+        buyBondsForAddress(amount, targetPrice, msg.sender);
+    }
+
+    function buyBondsFromCashContract(uint256 amount, uint256 targetPrice, address buyer) external onlyCash {
+        buyBondsForAddress(amount, targetPrice, buyer);
+    }
+
+    function buyBondsForAddress(uint256 amount, uint256 targetPrice, address buyer) internal {
         require(amount > 0, "Treasury: cannot purchase bonds with zero amount");
 
         uint256 cashPrice = _getCashPrice();
@@ -90,23 +102,24 @@ contract Treasury is Context, Ownable {
         );
 
         // Calculate dynamic exchange rate and bonus
+        /*
         uint256 dynamicRate = (one * one) / cashPrice; // Inverse proportion to price
         uint256 bonus = (dynamicRate * earlyBonusPercentage) / 100;
         uint256 totalBonds = (amount * (dynamicRate + bonus)) / one;
+        */
+       uint256 totalBonds = amount * one / cashPrice;
 
         // Update weighted average timestamp
-        uint256 oldBalance = bondBalance[msg.sender];
+        uint256 oldBalance = Bond(bond).balanceOf(buyer);
         uint256 newBalance = oldBalance + totalBonds;
 
         // Weighted average: ((oldBalance * oldTimestamp) + (newBonds * currentTime)) / newBalance
-        bondPurchaseTimestamp[msg.sender] = (
-            (bondPurchaseTimestamp[msg.sender] * oldBalance) + (block.timestamp * totalBonds)
+        bondPurchaseTimestamp[buyer] = (
+            (bondPurchaseTimestamp[buyer] * oldBalance) + (block.timestamp * totalBonds)
         ) / newBalance;
 
-        bondBalance[msg.sender] = newBalance; // Update bond balance
-
-        Cash(cash).burnFromAddress(msg.sender, amount); // Burn stablecoins
-        Bond(bond).mint(msg.sender, totalBonds); // Mint bonds
+        Cash(cash).burnFromAddress(buyer, amount); // Burn stablecoins
+        Bond(bond).mint(buyer, totalBonds); // Mint bonds
     }
 
     function redeemBonds(uint256 amount) external {
@@ -121,6 +134,8 @@ contract Treasury is Context, Ownable {
         // Calculate holding rewards based on duration
         uint256 holdingDuration = block.timestamp - bondPurchaseTimestamp[msg.sender];
         uint256 holdingBonus = (holdingDuration * holdingRewardPercentage) / (30 days);
+        //holdingBonus should not exceed 30%
+        holdingBonus = Math.min(holdingBonus, 30);
         // Reward grows over time
         uint256 totalCash = amount + (amount * holdingBonus) / 100;
 
@@ -129,7 +144,7 @@ contract Treasury is Context, Ownable {
             "Treasury: insufficient cash reserves"
         );
 
-        accumulatedSeigniorage -= amount; // Reduce reserve
+        accumulatedSeigniorage -= totalCash; // Reduce reserve
         Bond(bond).burnFromAddress(msg.sender, amount); // Burn bonds
         Cash(cash).transfer(msg.sender, totalCash); // Transfer stablecoins
     }

@@ -51,6 +51,7 @@ describe("Stablecoin", function () {
       const highRiskBond = await HighRiskBond.deploy();
       await highRiskBond.waitForDeployment();
       const highRiskBondAddress = await highRiskBond.getAddress();
+
     
       // Deploy Treasury with the new constructor arguments
       const Treasury = await ethers.getContractFactory("Treasury");
@@ -65,6 +66,10 @@ describe("Stablecoin", function () {
       );
       await treasury.waitForDeployment();
       const treasuryAddress = await treasury.getAddress();
+
+      // Set oracle and treasury in cash contract
+      await cash.setOracle(oracleAddress);
+      await cash.setTreasury(treasuryAddress)
 
       // Grant minting roles to the treasury
       await cash.grantMinterRole(treasuryAddress);
@@ -191,6 +196,47 @@ describe("Stablecoin", function () {
           const bondBalance = await bond.balanceOf(await otherAccount.getAddress());
           expect(bondBalance).to.be.gt(bondAmount);
         });
+    });
+    describe("Transferring Cash", function () {
+      it("Cash transfer should occur normally when price is above 0.95", async function () {
+        const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
+        const [owner, account1, account2] = await ethers.getSigners();
+
+        // Transfer cash from account1 to account2
+        const cashAmount = ethers.parseUnits("100", 18);
+        await cash.connect(account1).approve(await account2.getAddress(), cashAmount);
+        await cash.connect(account1).transfer(account2.address, cashAmount);
+
+        account1Balance = await cash.balanceOf(await account1.getAddress());
+        account2Balance = await cash.balanceOf(await account2.getAddress());
+
+        account1Bonds = await bond.balanceOf(await account1.getAddress());
+
+        expect(account1Balance).to.equal(ethers.parseUnits("100", 18));
+        expect(account2Balance).to.equal(ethers.parseUnits("300", 18));
+        expect(account1Bonds).to.equal(ethers.parseUnits("0", 18));
+      });
+
+      it("Cash transfer force bonds purchase when price is below 0.95", async function () {
+        const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
+        const [owner, account1, account2] = await ethers.getSigners();
+
+        oracle.setPrice(ethers.parseUnits("0.90", 18));
+
+        // Transfer cash from account1 to account2
+        const cashAmount = ethers.parseUnits("100", 18);
+        await cash.connect(account1).approve(await account2.getAddress(), cashAmount);
+        await cash.connect(account1).transfer(account2.address, cashAmount);
+
+        account1Balance = await cash.balanceOf(await account1.getAddress());
+        account2Balance = await cash.balanceOf(await account2.getAddress());
+
+        account1Bonds = await bond.balanceOf(await account1.getAddress());
+
+        expect(account1Balance).to.equal(ethers.parseUnits("90", 18));
+        expect(account2Balance).to.equal(ethers.parseUnits("300", 18));
+        expect(account1Bonds).to.be.gt(ethers.parseUnits("10", 18));
+      });
     });
     describe("Prolonged Price Depression", function () {
         it("Simulates prolonged price depression and late bond purchase", async function () {
