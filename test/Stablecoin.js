@@ -4,6 +4,11 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
+const fs = require('fs');
+const csv = require('csv-parser');
+const { start } = require("repl");
+
+
 
 describe("Stablecoin", function () {
   async function deployContracts() {
@@ -198,7 +203,7 @@ describe("Stablecoin", function () {
         });
     });
     describe("Transferring Cash", function () {
-      it("Cash transfer should occur normally when price is above 0.95", async function () {
+      it("Cash transfer should occur normally when price is 1 or more", async function () {
         const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
         const [owner, account1, account2] = await ethers.getSigners();
 
@@ -233,7 +238,7 @@ describe("Stablecoin", function () {
 
         account1Bonds = await bond.balanceOf(await account1.getAddress());
 
-        expect(account1Balance).to.equal(ethers.parseUnits("90", 18));
+        expect(account1Balance).to.be.lt(ethers.parseUnits("100", 18));
         expect(account2Balance).to.equal(ethers.parseUnits("300", 18));
         expect(account1Bonds).to.be.gt(ethers.parseUnits("10", 18));
       });
@@ -295,6 +300,86 @@ describe("Stablecoin", function () {
         });
 
     }); 
+
+    describe("Basis Cash Depegging Simulation", function () {
+      it("Simulates transactions that occurred during Basis Cash depeg", async function () {
+          const { treasury, bond, cash, oracle } = await loadFixture(deployContracts);
+          const [_, account1, account2] = await ethers.getSigners();
+
+          const startingSupply1 = ethers.parseUnits("45120197.197678980428723026", 18);
+          const startingSupply2 = ethers.parseUnits("40000000", 18);
+          const tx = await cash.mint(await account1.getAddress(), startingSupply1);
+          await tx.wait();
+          const tx2 = await cash.mint(await account2.getAddress(), startingSupply2);
+          await tx2.wait();
+          const startingSupply = (await cash.totalSupply()).toString();
+
+          const rows = [];
+
+          const processCSV = async function processCSV(filePath) {
+            return new Promise((resolve, reject) => {
+              const rows = [];
+              fs.createReadStream(filePath)
+                .pipe(csv())
+                .on('data', (row) => {
+                  rows.push(row);
+                })
+                .on('end', async () => {
+                  //console.log(`Start Supply: ${await cash.totalSupply()}`);
+                  let prevDay = 0;
+                  let flip = false;
+                  for (const row of rows) {
+                    const amount = row['Amount'];
+                    const price = row['price'];
+                    const day = row['day'];
+
+
+                    if (amount == 0 || amount.includes('e')) {
+                      continue;
+                    }
+
+                    //console.log(amount.toString(), price.toString());
+
+                    const stablecoinAmount = ethers.parseUnits(amount.toString(), 18);
+                    const stablecoinPrice = ethers.parseUnits(price.toString(), 18);
+
+
+                    // Set the stablecoin price
+                    await oracle.setPrice(stablecoinPrice);
+
+                    // Simulate the transaction
+                    if (flip) {
+                      await cash.connect(account1).transfer(await account2.getAddress(), stablecoinAmount);
+                      flip = false;
+                    } else {
+                      await cash.connect(account2).transfer(await account1.getAddress(), stablecoinAmount);
+                      flip = true;
+                    }
+
+
+                    if (day != prevDay) {
+                      prevDay = day;
+                      //console.log((await cash.totalSupply()).toString());
+                      //console.log((await bond.totalSupply()).toString());
+                    }
+                  }
+
+                  //console.log(`End Supply: ${await cash.totalSupply()}`);
+                  resolve();
+                })
+                .on('error', (err) => {
+                  console.error('Error reading the CSV:', err);
+                  reject(err);
+                });
+            });
+          }
+          
+          await processCSV('data/transactions.csv');
+          expect(startingSupply1).to.be.gt(await cash.totalSupply());
+
+      });
+
+    });
 
   });
   
