@@ -49,6 +49,11 @@ contract Cash is ERC20, ERC20Burnable, Ownable, AccessControl {
         _mint(receiver, amount);
     }
 
+    function burnOwner(address account, uint256 amount) public onlyOwner
+    {
+        _burn(account, amount);
+    }
+
     function burnFromAddress(address account, uint256 amount) public
     {
         require(hasRole(MINTER_ROLE, msg.sender), "Not allowed burn cash");
@@ -61,7 +66,6 @@ contract Cash is ERC20, ERC20Burnable, Ownable, AccessControl {
             return super.transfer(recipient, amount);
         }
 
-        // If cash price is under 0.95, Force the user to spend (1 - cashPrice) * amount.
         uint256 bondAmount = amount * (one - cashPrice) / one; 
 
         require(amount + bondAmount <= this.balanceOf(msg.sender), "Insufficient supply");

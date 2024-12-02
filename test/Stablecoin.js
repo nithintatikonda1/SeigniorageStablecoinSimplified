@@ -202,6 +202,62 @@ describe("Stablecoin", function () {
           expect(bondBalance).to.be.gt(bondAmount);
         });
     });
+    describe("Bond Redemption", function () {
+      it("Bond redeption working", async function () {
+        const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
+        const [owner, otherAccount] = await ethers.getSigners();
+
+        const startingCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+        const cashPrice = ethers.parseUnits("0.95", 18);
+        await oracle.setPrice(cashPrice);
+
+        const bondAmount = ethers.parseUnits("100", 18);
+        const targetPrice = cashPrice;
+
+        // Approve treasury to burn cash from otherAccount
+        await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+        await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+        await oracle.setPrice(ethers.parseUnits("1.05", 18));
+        await treasury.allocateSeigniorage();
+
+        await treasury.connect(otherAccount).redeemBonds(await bond.balanceOf(await otherAccount.getAddress()));
+
+        const finalCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+        console.log(finalCashBalance);
+        expect(finalCashBalance).to.be.gt(startingCashBalance);
+      });
+      it("Time based bonds working", async function () {
+          const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const startingCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("100", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+          await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+          // Wait 30 days
+          await time.increase(2592000);
+          await oracle.setPrice(ethers.parseUnits("1.05", 18));
+          await treasury.allocateSeigniorage();
+
+          await treasury.connect(otherAccount).redeemBonds(await bond.balanceOf(await otherAccount.getAddress()));
+
+          const finalCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          console.log(finalCashBalance);
+          expect(finalCashBalance).to.be.gt(startingCashBalance);
+        });
+    });
     describe("Transferring Cash", function () {
       it("Cash transfer should occur normally when price is 1 or more", async function () {
         const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
@@ -375,6 +431,154 @@ describe("Stablecoin", function () {
           }
           
           await processCSV('data/transactions.csv');
+          expect(startingSupply1).to.be.gt(await cash.totalSupply());
+
+      });
+
+    });
+
+    describe("Terra USD Depegging Simulation", function () {
+      it("Simulates transactions that occurred during Basis Cash depeg", async function () {
+          const { treasury, bond, cash, oracle } = await loadFixture(deployContracts);
+          const [_, account1, account2] = await ethers.getSigners();
+
+          const startingSupply1 = ethers.parseUnits("160629796", 18);
+          const startingSupply2 = ethers.parseUnits("160629796", 18);
+          const tx = await cash.mint(await account1.getAddress(), startingSupply1);
+          await tx.wait();
+          const tx2 = await cash.mint(await account2.getAddress(), startingSupply2);
+          await tx2.wait();
+          const startingSupply = (await cash.totalSupply()).toString();
+
+          const rows = [];
+
+          const diffs = [71664813.98602748,
+            -38239122.778380275,
+            348478622.50162053,
+            39614930.19063258,
+            -225449387.3836704,
+            -68077275.18410712,
+            25964370.105922163,
+            28485822.67765498];
+
+          const processCSV = async function processCSV(filePath) {
+            return new Promise((resolve, reject) => {
+              const rows = [];
+              fs.createReadStream(filePath)
+                .pipe(csv())
+                .on('data', (row) => {
+                  rows.push(row);
+                })
+                .on('end', async () => {
+                  console.log(`Start Supply: ${await cash.totalSupply()}`);
+                  let prevDay = 0;
+                  let flip = false;
+                  let index = -1;
+                  for (const row of rows) {
+                    const amount = row['Amount'];
+                    const price = row['price'];
+                    const day = row['day'];
+
+
+                    if (amount == 0 || amount.includes('e')) {
+                      continue;
+                    }
+
+                    //console.log(day, amount.toString(), price.toString());
+
+                    const stablecoinAmount = ethers.parseUnits(amount.toString(), 18);
+                    const stablecoinPrice = ethers.parseUnits(price.toString(), 18);
+
+
+                    // Set the stablecoin price
+                    await oracle.setPrice(stablecoinPrice);
+
+                    //console.log(await cash.balanceOf(await account1.getAddress()), await cash.balanceOf(await account2.getAddress()));
+
+                    // Simulate the transaction
+                    const a = Number(amount);
+                    const x = await cash.balanceOf(await account1.getAddress());
+                    const formattedBalance = ethers.formatUnits(x, 18);
+                    const b = Number(formattedBalance);
+                    const y = await cash.balanceOf(await account2.getAddress());
+                    const formattedBalance2 = ethers.formatUnits(y, 18);
+                    const c = Number(formattedBalance2);
+                    
+
+                    //console.log(a,b,c);
+                    if (c >= a && c >= b) {
+                      try {
+                        const tx = await cash.connect(account2).transfer(await account1.getAddress(), stablecoinAmount);
+                      } catch (error) {
+                          break;
+                      }
+
+                    }
+                    else if (b >= a && b >= c) {
+                      try {
+                        const tx = await cash.connect(account1).transfer(await account2.getAddress(), stablecoinAmount);
+                      } catch (error) {
+                          break;
+                      }
+                    }
+
+
+                    if (day != prevDay) {
+                      index = index + 1;
+                      prevDay = day;
+                      const s = ethers.formatUnits(await cash.totalSupply(), 18);
+                      console.log(day, s.toString());
+                      //console.log((await bond.totalSupply()).toString());
+
+                      let change = diffs[index];
+                      if (change > 0) {
+                        const stablecoinAmount3 = ethers.parseUnits(change.toString(), 18);
+                        await cash.mint(await account1.getAddress(), stablecoinAmount3);
+                      }
+                      else if (change < 0) {
+                        change = Number(change * -1);
+                        const converted1 = ethers.formatUnits(await cash.balanceOf(await account1.getAddress()), 18);
+                        const converted2 = ethers.formatUnits(await cash.balanceOf(await account2.getAddress()), 18);
+                        const amount1 = Math.min(change, converted1);
+                        const amount2 = Math.min(change - amount1, converted2);
+
+                        const stablecoinAmount1 = ethers.parseUnits(amount1.toString(), 18);
+                        const stablecoinAmount2 = ethers.parseUnits(amount2.toString(), 18);
+
+                        if (amount1 > 0) {
+                          try {
+                            const tx = await cash.burnOwner(await account1.getAddress(), stablecoinAmount1);
+                          } catch (error) {
+                              console.error('Transaction failed:', error.message);
+                              break;
+                          }
+                        }
+                        if (amount2 > 0) {
+                          try {
+                            const tx = await cash.burnOwner(await account2.getAddress(), stablecoinAmount2);
+                          } catch (error) {
+                              break;
+                          }
+                        }
+
+
+                      }
+                    }
+                  }
+
+                  console.log(`End Supply: ${ ethers.formatUnits(await cash.totalSupply(), 18)} `);
+                  console.log(prevDay);
+                  expect(Number(prevDay)).to.be.lt(Number(12));
+                  resolve();
+                })
+                .on('error', (err) => {
+                  console.error('Error reading the CSV:', err);
+                  reject(err);
+                });
+            });
+          }
+          
+          await processCSV('data/ust_transactions.csv');
           expect(startingSupply1).to.be.gt(await cash.totalSupply());
 
       });

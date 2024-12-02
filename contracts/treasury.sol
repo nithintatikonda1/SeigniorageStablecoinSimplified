@@ -127,7 +127,7 @@ contract Treasury is Context, Ownable {
 
         uint256 cashPrice = _getCashPrice();
         require(
-            cashPrice > priceCeiling, // Price > $1.05
+            cashPrice >= priceCeiling, // Price > $1.05
             "Treasury: cash price not eligible for bond redemption"
         );
 
@@ -138,6 +138,11 @@ contract Treasury is Context, Ownable {
         holdingBonus = Math.min(holdingBonus, 30);
         // Reward grows over time
         uint256 totalCash = amount + (amount * holdingBonus) / 100;
+
+        if (Cash(cash).balanceOf(address(this)) < totalCash) {
+            accumulatedSeigniorage = totalCash;
+            Cash(cash).mint(address(this), totalCash - (Cash(cash).balanceOf(address(this))));
+        }
 
         require(
             Cash(cash).balanceOf(address(this)) >= totalCash,
@@ -190,7 +195,7 @@ contract Treasury is Context, Ownable {
         require(amount > 0, "Treasury: cannot redeem bonds with zero amount");
 
         uint256 cashPrice = _getCashPrice();
-        require(cashPrice > priceCeiling, "Treasury: cash price not eligible for bond redemption");
+        require(cashPrice >= priceCeiling, "Treasury: cash price not eligible for bond redemption");
 
         uint256 maxRedemptionAmount = 1000 * 1e18; // Conservative limit
         require(amount <= maxRedemptionAmount, "Treasury: redemption amount exceeds low-tier limit");
@@ -215,7 +220,7 @@ contract Treasury is Context, Ownable {
         uint256 cashPrice = _getCashPrice();
         uint256 redeemAmount;
 
-        if (cashPrice > priceCeiling) {
+        if (cashPrice >= priceCeiling) {
             redeemAmount = (amount * highRiskRedemptionMultiplier) / 100; // Multiplier >= 100%
         } else if (cashPrice >= one && cashPrice <= priceCeiling) {
             redeemAmount = amount;
@@ -234,7 +239,7 @@ contract Treasury is Context, Ownable {
 
     function allocateSeigniorage() external {
         uint256 cashPrice = _getCashPrice();
-        if (cashPrice <= priceCeiling) {
+        if (cashPrice < priceCeiling) {
             return;
         }
 
@@ -257,7 +262,7 @@ contract Treasury is Context, Ownable {
         );
 
         if (treasuryReserve > 0) {
-            uint256 maxTreasuryAllocation = (seigniorage * 98) / 100;
+            uint256 maxTreasuryAllocation = (seigniorage * 99) / 100;
             if (treasuryReserve > maxTreasuryAllocation) {
                 treasuryReserve = maxTreasuryAllocation;
             }
