@@ -1,13 +1,15 @@
-# Sample Hardhat Project
+# Improved Seigniorage Stablecoin
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+This project implements improvements on the seigniorage stablecoin concept. These changes include:
 
-Try running some of the following tasks:
+1. Multi-tier bonds
+2. Time-based bond incentives
+3. Automated bond purchases
+
+Our tests and experiments can be run with:
 
 ```shell
-npx hardhat help
 npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
 ```
+
+Our data analysis can be found in python notebook in the data folder.

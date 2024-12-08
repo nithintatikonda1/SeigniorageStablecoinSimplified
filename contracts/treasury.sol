@@ -29,9 +29,9 @@ contract Treasury is Context, Ownable {
     // New variables
     address public lowRiskBond;
     address public highRiskBond;
-    uint256 public highRiskBondLockupPeriod = 30 days;
+    uint256 public highRiskBondLockupPeriod = 100 days;
     mapping(address => uint256) public highRiskBondPurchaseTimestamp;
-    uint256 public highRiskRedemptionMultiplier = 100; // 100% (1x)
+    uint256 public highRiskRedemptionMultiplier = 120; // 100% (1x)
     uint256 public highRiskPenaltyRate = 20; // 20%
     // End of new variables
 
@@ -133,9 +133,9 @@ contract Treasury is Context, Ownable {
 
         // Calculate holding rewards based on duration
         uint256 holdingDuration = block.timestamp - bondPurchaseTimestamp[msg.sender];
-        uint256 holdingBonus = (holdingDuration * holdingRewardPercentage) / (30 days);
+        uint256 holdingBonus = (holdingDuration * holdingRewardPercentage) / (90 days);
         //holdingBonus should not exceed 30%
-        holdingBonus = Math.min(holdingBonus, 30);
+        holdingBonus = Math.min(holdingBonus, 10);
         // Reward grows over time
         uint256 totalCash = amount + (amount * holdingBonus) / 100;
 
@@ -183,7 +183,7 @@ contract Treasury is Context, Ownable {
         uint256 maxPurchaseAmount = 5000 * 1e18; // Limit
         require(amount <= maxPurchaseAmount, "Treasury: purchase amount exceeds high-tier limit");
 
-        uint256 bondAmount = (amount * one * 110) / (100 * cashPrice); // 10% bonus
+        uint256 bondAmount = (amount * one  / cashPrice); // 10% bonus
 
         highRiskBondPurchaseTimestamp[msg.sender] = block.timestamp;
 
@@ -195,7 +195,7 @@ contract Treasury is Context, Ownable {
         require(amount > 0, "Treasury: cannot redeem bonds with zero amount");
 
         uint256 cashPrice = _getCashPrice();
-        require(cashPrice >= priceCeiling, "Treasury: cash price not eligible for bond redemption");
+        require(cashPrice >= one, "Treasury: cash price not eligible for bond redemption");
 
         uint256 maxRedemptionAmount = 1000 * 1e18; // Conservative limit
         require(amount <= maxRedemptionAmount, "Treasury: redemption amount exceeds low-tier limit");
@@ -203,7 +203,7 @@ contract Treasury is Context, Ownable {
         uint256 treasuryBalance = IERC20(cash).balanceOf(address(this));
         require(treasuryBalance >= amount, "Treasury: insufficient treasury balance");
 
-        Bond(lowRiskBond).burnFrom(msg.sender, amount);
+        Bond(lowRiskBond).burnFromAddress(msg.sender, amount);
         Cash(cash).transfer(msg.sender, amount);
     }
 
@@ -231,7 +231,7 @@ contract Treasury is Context, Ownable {
 
         highRiskBondPurchaseTimestamp[msg.sender] = 0;
 
-        Bond(highRiskBond).burnFrom(msg.sender, amount);
+        Bond(highRiskBond).burnFromAddress(msg.sender, amount);
         Cash(cash).transfer(msg.sender, redeemAmount);
     }
 

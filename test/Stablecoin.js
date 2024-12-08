@@ -415,8 +415,8 @@ describe("Stablecoin", function () {
 
                     if (day != prevDay) {
                       prevDay = day;
-                      //console.log((await cash.totalSupply()).toString());
-                      //console.log((await bond.totalSupply()).toString());
+                      console.log('Bond',(await cash.totalSupply()).toString());
+                      console.log('Cash',(await bond.totalSupply()).toString());
                     }
                   }
 
@@ -580,6 +580,131 @@ describe("Stablecoin", function () {
           
           await processCSV('data/ust_transactions.csv');
           expect(startingSupply1).to.be.gt(await cash.totalSupply());
+
+      });
+
+    });
+
+    describe("Time Based Bond Payouts", function () {
+      it("Get Bond Payout for different amount of days (Every 5 days).", async function () {
+        for (let i = 0; i < 150; i+=5) {
+          const { cash, bond, oracle, treasury } = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const startingCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("200", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+          await treasury.connect(otherAccount).buyBonds(bondAmount, targetPrice);
+
+          // Wait 30 days
+          if (i != 0) {
+            await time.increase(60 * 60 * 24 * i);
+          }
+          await oracle.setPrice(ethers.parseUnits("1.05", 18));
+          await treasury.allocateSeigniorage();
+
+          await treasury.connect(otherAccount).redeemBonds(await bond.balanceOf(await otherAccount.getAddress()));
+
+          const finalCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          console.log(ethers.formatUnits(finalCashBalance, 18));
+        }
+
+      });
+
+    });
+
+    
+    describe("High Tier Bond Payouts", function () {
+      it("Get Bond Payout for different amount of days (Every 5 days).", async function () {
+        for (let i = 0; i < 150; i+=5) {
+          const { cash, bond, oracle, treasury, userAddresses, lowRiskBond, highRiskBond} = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const tx = await cash.mint(await treasury.getAddress(), ethers.parseUnits("10000", 18));
+          await tx.wait();
+
+          const startingCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("200", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+          await treasury.connect(otherAccount).highTierBuyBonds(bondAmount, targetPrice);
+
+          // Wait 30 days
+          if (i != 0) {
+            await time.increase(60 * 60 * 24 * i);
+          }
+          await oracle.setPrice(ethers.parseUnits("1.05", 18));
+          await treasury.allocateSeigniorage();
+
+          try {
+            await treasury.connect(otherAccount).highTierRedeemBonds(await highRiskBond.balanceOf(await otherAccount.getAddress()));
+            const finalCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+            console.log(ethers.formatUnits(finalCashBalance, 18));
+          } catch (error) {
+            console.error(0);
+          }
+
+          
+        }
+
+      });
+
+    });
+
+    describe("Low Tier Bond Payouts", function () {
+      it("Get Bond Payout for different amount of days (Every 5 days).", async function () {
+        for (let i = 0; i < 150; i+=5) {
+          const { cash, bond, oracle, treasury, userAddresses, lowRiskBond, highRiskBond} = await loadFixture(deployContracts);
+          const [owner, otherAccount] = await ethers.getSigners();
+
+          const tx = await cash.mint(await treasury.getAddress(), ethers.parseUnits("10000", 18));
+          await tx.wait();
+
+          const startingCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+          const cashPrice = ethers.parseUnits("0.95", 18);
+          await oracle.setPrice(cashPrice);
+
+          const bondAmount = ethers.parseUnits("200", 18);
+          const targetPrice = cashPrice;
+
+          // Approve treasury to burn cash from otherAccount
+          await cash.connect(otherAccount).approve(await treasury.getAddress(), bondAmount);
+          await treasury.connect(otherAccount).lowTierBuyBonds(bondAmount, targetPrice);
+
+          // Wait 30 days
+          if (i != 0) {
+            await time.increase(60 * 60 * 24 * i);
+          }
+          await oracle.setPrice(ethers.parseUnits("1.05", 18));
+          await treasury.allocateSeigniorage();
+
+          try {
+            await treasury.connect(otherAccount).lowTierRedeemBonds(await lowRiskBond.balanceOf(await otherAccount.getAddress()));
+            const finalCashBalance = await cash.balanceOf(await otherAccount.getAddress());
+
+            console.log(ethers.formatUnits(finalCashBalance, 18));
+          } catch (error) {
+            console.error(0);
+          }
+
+          
+        }
 
       });
 
